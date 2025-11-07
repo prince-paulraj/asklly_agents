@@ -7,6 +7,7 @@ class QueryRequest(BaseModel):
     bot_key: str
     org: str
     uid: str
+    cid: Optional[str] = None
 
 
 class QueryResponse(BaseModel):

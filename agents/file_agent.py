@@ -7,7 +7,7 @@ from tools.BashInterpreter import BashInterpreter
 from memory import Memory
 
 class FileAgent(Agent):
-    def __init__(self, name, prompt_path, provider, verbose=False):
+    def __init__(self, name, prompt_path, provider, cid, verbose=False):
         """
         The file agent is a special agent for file operations.
         """
@@ -21,6 +21,7 @@ class FileAgent(Agent):
         self.type = "file_agent"
         self.memory = Memory(self.load_prompt(prompt_path),
                         memory_compression=False,
+                        cid=cid,
                         model_provider=provider.get_model_name())
     
     async def process(self, prompt, speech_module) -> str:

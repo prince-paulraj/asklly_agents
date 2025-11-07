@@ -5,7 +5,8 @@ from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from db import SessionLocal
 from time import sleep
-
+import uuid
+import time
 import json, logging
 
 import asyncio
@@ -26,16 +27,6 @@ def get_db():
     finally:
         db.close()
 
-@api.on_event("startup")
-async def startup_event():
-    global interaction_instance
-    interaction_instance = initialize_system()
-
-@api.on_event("shutdown")
-async def shutdown_event():
-    if interaction_instance and interaction_instance.browser:
-        interaction_instance.browser.driver.quit()
-
 api.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 
 api.add_middleware(
@@ -53,20 +44,26 @@ async def hello():
 @api.post("/agent")
 async def agent(query: Query, db: Session = Depends(get_db)):
     async def stream():
-        async with interaction_lock:
-            interaction_instance.set_query(query.query, query.bot_key, db)
-            print(f"Starting the questioning: {query.query}")
-            await interaction_instance.think(query.uid, query.org)
-            yield json.dumps({"status":"RUNNING"})
-            while True:
-                sleep(1)
-                if interaction_instance.last_answer:
-                    yield json.dumps({"status":"SUCCESS", "answer": interaction_instance.last_answer, "thinking": interaction_instance.last_reasoning})
-                    print("Answer Generated")
-                    print("Reasoning: ",interaction_instance.last_reasoning)
-                    print("Answer: ",interaction_instance.last_answer)
-                    break
-                print("Generating Answer....")
+        cid = query.cid if query.cid else str(uuid.uuid5(uuid.NAMESPACE_DNS, str(query.uid) + str(time.time())))
+        interaction_instance = initialize_system(cid)
+        interaction_instance.set_query(query.query, query.bot_key, db)
+        print(f"Starting the questioning: {query.query}")
+        await interaction_instance.think(query.uid, query.org)
+        yield json.dumps({"status":"RUNNING"})
+        while True:
+            sleep(1)
+            if interaction_instance.last_answer:
+                json_dump = {"status":"SUCCESS", "answer": interaction_instance.last_answer, "thinking": interaction_instance.last_reasoning}
+                if interaction_instance.last_browser_search:
+                    json_dump["search"] = interaction_instance.last_browser_search
+                if interaction_instance.browser_sources:
+                    json_dump["sources"] = interaction_instance.browser_sources
+                yield json.dumps(json_dump)
+                print("Answer Generated")
+                print("Reasoning: ",interaction_instance.last_reasoning)
+                print("Answer: ",interaction_instance.last_answer)
+                break
+            print("Generating Answer....")
     return StreamingResponse(stream())
 
 if __name__ == "__main__":

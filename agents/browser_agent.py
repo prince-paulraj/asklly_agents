@@ -20,7 +20,7 @@ class Action(Enum):
     SEARCH = "SEARCH"
     
 class BrowserAgent(Agent):
-    def __init__(self, name, prompt_path, provider, verbose=False, browser=None):
+    def __init__(self, name, prompt_path, provider, cid, verbose=False, browser=None):
         """
         The Browser agent is an agent that navigate the web autonomously in search of answer
         """
@@ -40,6 +40,7 @@ class BrowserAgent(Agent):
         self.logger = Logger("browser_agent.log")
         self.memory = Memory(self.load_prompt(prompt_path),
                         memory_compression=False,
+                        cid=cid,
                         model_provider=provider.get_model_name() if provider else None)
     
     def get_today_date(self) -> str:

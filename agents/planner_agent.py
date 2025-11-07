@@ -12,7 +12,7 @@ from logger import Logger
 from memory import Memory
 
 class PlannerAgent(Agent):
-    def __init__(self, name, prompt_path, provider, verbose=False, browser=None):
+    def __init__(self, name, prompt_path, provider, cid, verbose=False, browser=None):
         """
         The planner agent is a special agent that divides and conquers the task.
         """
@@ -23,15 +23,15 @@ class PlannerAgent(Agent):
         self.tools['json'].tag = "json"
         self.browser = browser
         self.agents = {
-            "coder": CoderAgent(name, "prompts/base/coder_agent.txt", provider, verbose=False),
-            "file": FileAgent(name, "prompts/base/file_agent.txt", provider, verbose=False),
-            "web": BrowserAgent(name, "prompts/base/browser_agent.txt", provider, verbose=False, browser=browser),
-            "casual": CasualAgent(name, "prompts/base/casual_agent.txt", provider, verbose=False)
+            "coder": CoderAgent(name, "prompts/base/coder_agent.txt", provider, verbose=False, cid=cid),
+            "web": BrowserAgent(name, "prompts/base/browser_agent.txt", provider, verbose=False, browser=browser, cid=cid),
+            "casual": CasualAgent(name, "prompts/base/casual_agent.txt", provider, verbose=False, cid=cid)
         }
         self.role = "planification"
         self.type = "planner_agent"
         self.memory = Memory(self.load_prompt(prompt_path),
                                 memory_compression=False,
+                                cid=cid,
                                 model_provider=provider.get_model_name())
         self.logger = Logger("planner_agent.log")
     

@@ -24,7 +24,7 @@ embeddings = DeepInfraEmbeddings(
 )
 
 class ReterivalAgent(Agent):
-    def __init__(self, name, prompt_path, provider, verbose=False):
+    def __init__(self, name, prompt_path, provider, cid, verbose=False):
         """
         The casual agent is a special for casual talk to the user without specific tasks.
         """
@@ -35,6 +35,7 @@ class ReterivalAgent(Agent):
         self.type = "retrival_agent"
         self.memory = Memory(self.load_prompt(prompt_path),
                                 memory_compression=False,
+                                cid=cid,
                                 model_provider=provider.get_model_name())
         
     async def retrive_knowledge(self, table_names: list[str], query, top_k:int = 10) -> str:

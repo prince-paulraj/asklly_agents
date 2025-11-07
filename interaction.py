@@ -35,6 +35,10 @@ class Interaction:
         self.is_generating = False
         self.languages = langs
         self.bot_key = None
+        self.browser_sources = None
+        self.last_answer = None
+        self.last_browser_search = None
+        self.browser_agent = next((agent for agent in self.agents if agent.type == "browser_agent"), None)
         self.db: Session | None = None
         if tts_enabled:
             self.initialize_tts()
@@ -166,12 +170,17 @@ class Interaction:
         self.current_agent = agent
         self.is_generating = True
         if agent.agent_name == "retrieval":
-            self.last_answer, self.last_reasoning = await agent.process(self.last_query, bot_key=self.bot_key, db=self.db)
+            retrieval_answer, retrieval_reasoning = await agent.process(self.last_query, bot_key=self.bot_key, db=self.db)
+            browser_answer, browser_reasoning = await self.browser_agent.process(self.last_query, self.speech)
+            sources = "\n".join(self.browser_agent.search_history)
+            self.last_browser_search = browser_answer
+            self.browser_sources = sources
+            self.last_answer = retrieval_answer
+            self.last_reasoning = retrieval_reasoning
         else:
             self.last_answer, self.last_reasoning = await agent.process(self.last_query, self.speech)
         self.is_generating = False
         if push_last_agent_memory:
-            self.current_agent.memory.push('user', self.last_query)
             self.current_agent.memory.push('assistant', self.last_answer)
         if self.last_answer == tmp:
             self.last_answer = None

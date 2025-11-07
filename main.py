@@ -33,7 +33,7 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 logger = Logger("backend.log")
 
-def initialize_system():
+def initialize_system(cid: str):
     stealth_mode = config.getboolean('BROWSER', 'stealth_mode')
     personality_folder = "jarvis" if config.getboolean('MAIN', 'jarvis_personality') else "base"
     languages = config["MAIN"]["languages"].split(' ')
@@ -76,27 +76,27 @@ def initialize_system():
         CasualAgent(
             name=config["MAIN"]["agent_name"],
             prompt_path=f"prompts/{personality_folder}/casual_agent.txt",
-            provider=provider, verbose=False
+            provider=provider, verbose=False, cid=cid
         ),
         CoderAgent(
             name="coder",
             prompt_path=f"prompts/{personality_folder}/coder_agent.txt",
-            provider=provider, verbose=False
+            provider=provider, verbose=False, cid=cid
         ),
         ReterivalAgent(
             name="retrieval",
             prompt_path=f"prompts/{personality_folder}/retrival_agent.txt",
-            provider=provider, verbose=False
+            provider=provider, verbose=False, cid=cid
         ),
         BrowserAgent(
             name="Browser",
             prompt_path=f"prompts/{personality_folder}/browser_agent.txt",
-            provider=provider, verbose=False, browser=browser
+            provider=provider, verbose=False, browser=browser, cid=cid
         ),
         PlannerAgent(
             name="Planner",
             prompt_path=f"prompts/{personality_folder}/planner_agent.txt",
-            provider=provider, verbose=False, browser=browser
+            provider=provider, verbose=False, browser=browser, cid=cid
         )
     ]
     logger.info("Agents initialized")

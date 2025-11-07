@@ -3,7 +3,7 @@ from agents.agent import Agent
 from memory import Memory
 
 class CasualAgent(Agent):
-    def __init__(self, name, prompt_path, provider, verbose=False):
+    def __init__(self, name, prompt_path, provider, cid, verbose=False):
         """
         The casual agent is a special for casual talk to the user without specific tasks.
         """
@@ -14,6 +14,7 @@ class CasualAgent(Agent):
         self.type = "casual_agent"
         self.memory = Memory(self.load_prompt(prompt_path),
                                 memory_compression=False,
+                                cid=cid,
                                 model_provider=provider.get_model_name())
     
     async def process(self, prompt, speech_module) -> str:

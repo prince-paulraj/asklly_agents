@@ -16,7 +16,7 @@ class CoderAgent(Agent):
     """
     The code agent is an agent that can write and execute code.
     """
-    def __init__(self, name, prompt_path, provider, verbose=False):
+    def __init__(self, name, prompt_path, provider, cid, verbose=False):
         super().__init__(name, prompt_path, provider, verbose, None)
         self.tools = {
             "bash": BashInterpreter(),
@@ -32,6 +32,7 @@ class CoderAgent(Agent):
         self.logger = Logger("code_agent.log")
         self.memory = Memory(self.load_prompt(prompt_path),
                         memory_compression=False,
+                        cid=cid,
                         model_provider=provider.get_model_name())
     
     def add_sys_info_prompt(self, prompt):
