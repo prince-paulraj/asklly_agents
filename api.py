@@ -46,14 +46,15 @@ async def agent(query: Query, db: Session = Depends(get_db)):
     async def stream():
         cid = query.cid if query.cid else str(uuid.uuid5(uuid.NAMESPACE_DNS, str(query.uid) + str(time.time())))
         interaction_instance = initialize_system(cid)
+        start = time.time()
         interaction_instance.set_query(query.query, query.bot_key, db)
         print(f"Starting the questioning: {query.query}")
         await interaction_instance.think(query.uid, query.org)
         yield json.dumps({"status":"RUNNING"})
         while True:
-            sleep(1)
+            await asyncio.sleep(1)
             if interaction_instance.last_answer:
-                json_dump = {"status":"SUCCESS", "answer": interaction_instance.last_answer, "thinking": interaction_instance.last_reasoning}
+                json_dump = {"status":"SUCCESS", "answer": interaction_instance.last_answer, "thinking": interaction_instance.last_reasoning, "end": int(time.time()) - int(start)}
                 if interaction_instance.last_browser_search:
                     json_dump["search"] = interaction_instance.last_browser_search
                 if interaction_instance.browser_sources:

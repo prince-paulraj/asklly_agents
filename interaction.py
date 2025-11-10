@@ -5,7 +5,7 @@ from text_to_speech import Speech
 from utility import pretty_print, animate_thinking
 from router import AgentRouter
 from speech_to_text import AudioTranscriber, AudioRecorder
-import threading
+import asyncio
 
 
 class Interaction:
@@ -121,23 +121,23 @@ class Interaction:
                 return None
         return buffer
     
-    def transcription_job(self) -> str:
+    async def transcription_job(self) -> str:
         """Transcribe the audio from the microphone."""
         self.recorder = AudioRecorder(verbose=True)
         self.transcriber = AudioTranscriber(self.ai_name, verbose=True)
         self.transcriber.start()
         self.recorder.start()
-        self.recorder.join()
-        self.transcriber.join()
+        while self.recorder.is_alive() and self.transcriber.is_alive():
+            await asyncio.sleep(0.1)
         query = self.transcriber.get_transcript()
         if query == "exit" or query == "goodbye":
             return None
         return query
 
-    def get_user(self) -> str:
+    async def get_user(self) -> str:
         """Get the user input from the microphone or the keyboard."""
         if self.stt_enabled:
-            query = "TTS transcription of user: " + self.transcription_job()
+            query = "TTS transcription of user: " + await self.transcription_job()
         else:
             query = self.read_stdin()
         if query is None:
@@ -159,7 +159,7 @@ class Interaction:
         push_last_agent_memory = False
         if self.last_query is None or len(self.last_query) == 0:
             return False
-        agent = self.router.select_agent(self.last_query)
+        agent = await asyncio.to_thread(self.router.select_agent, self.last_query)
         if agent is None:
             return False
         agent.set_org(org, uid)
@@ -172,7 +172,7 @@ class Interaction:
         if agent.agent_name == "retrieval":
             retrieval_answer, retrieval_reasoning = await agent.process(self.last_query, bot_key=self.bot_key, db=self.db)
             browser_answer, browser_reasoning = await self.browser_agent.process(self.last_query, self.speech)
-            sources = "\n".join(self.browser_agent.search_history)
+            sources = "\n".join(self.browser_agent.search_history) if self.browser_agent.search_history else None
             self.last_browser_search = browser_answer
             self.browser_sources = sources
             self.last_answer = retrieval_answer
@@ -198,15 +198,12 @@ class Interaction:
             return None
         return self.current_agent.get_last_block_answer()
     
-    def speak_answer(self) -> None:
+    async def speak_answer(self) -> None:
         """Speak the answer to the user in a non-blocking thread."""
         if self.last_query is None:
             return
         if self.tts_enabled and self.last_answer and self.speech:
-            def speak_in_thread(speech_instance, text):
-                speech_instance.speak(text)
-            thread = threading.Thread(target=speak_in_thread, args=(self.speech, self.last_answer))
-            thread.start()
+            await asyncio.to_thread(self.speech.speak, self.last_answer)
     
     def show_answer(self) -> None:
         """Show the answer to the user."""

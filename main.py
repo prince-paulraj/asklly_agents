@@ -5,8 +5,6 @@ from browser import Browser, create_driver
 from llm_provider import Provider
 from interaction import Interaction
 from dotenv import load_dotenv
-from time import sleep
-from utility import pretty_print
 
 import configparser
 import sys
@@ -125,7 +123,7 @@ async def main():
     print(f"Starting the questioning: Current dispute between thailand and combodia")
     await interaction.think("ffb76919-3348-53d4-b6f2-203e92277db2", "asklly")
     while True:
-        sleep(1)
+        await asyncio.sleep(1)
         if interaction.last_answer:
             print("Answer Generated")
             print("Reasoning: ",interaction.last_reasoning)
