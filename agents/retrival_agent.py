@@ -11,6 +11,7 @@ from utility import get_table_names
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy import func, String
 from sqlalchemy import select, exists, literal_column
+from WebSearcher import Websearch
 
 import config, logging, cassio
 
@@ -78,10 +79,16 @@ class ReterivalAgent(Agent):
             raise "Need DB And Bot key to start retrival"
         myKbs = []
         api = db.query(CreatingBot).filter(CreatingBot.apikey == bot_key).first()
+
         if api.training_files:
             myKbs = api.training_files.split(",")
         context = ""
         print(myKbs)
+        result_text = ""
+        if api.default_websearch:
+            web = Websearch()
+            search = web.search_web(prompt)
+            result_text = search.get("result")
         if myKbs:
             myKbIds = [int(i) for i in myKbs]
             print(f"Entering Kb, {myKbIds}")
@@ -124,7 +131,7 @@ class ReterivalAgent(Agent):
                 4. Focus on directly addressing the question, staying on topic, and being as clear and concise as possible.
                 5. Also consider the prompt given by the user, but do not go beyond the rules above.
         """
-        final_query = f"{api.prompt if api.prompt else SYS_PROMPT} \n User Query: {prompt} \n Context: {context}" 
+        final_query = f"{api.prompt if api.prompt else SYS_PROMPT} \n User Query: {prompt} \n Context: {context} \n Web Search: {result_text if result_text else None}" 
         # self.memory.push('user', final_query)
         self.memory.push('user', final_query, context=context, query=prompt)
         animate_thinking("Thinking...", color="status")

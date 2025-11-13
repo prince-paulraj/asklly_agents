@@ -69,4 +69,4 @@ async def agent(query: Query, db: Session = Depends(get_db)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("api:api", host="0.0.0.0", port=8844, workers=4)
+    uvicorn.run("api:api", host="0.0.0.0", port=8844, workers=2)
