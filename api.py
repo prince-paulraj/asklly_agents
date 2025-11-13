@@ -13,6 +13,7 @@ import asyncio
 from main import initialize_system
 from schemas import QueryRequest as Query
 from interaction import Interaction
+from session_manager import session_manager 
 
 api = FastAPI()
 interaction_instance: Interaction = None
@@ -45,7 +46,7 @@ async def hello():
 async def agent(query: Query, db: Session = Depends(get_db)):
     async def stream():
         cid = query.cid if query.cid else str(uuid.uuid5(uuid.NAMESPACE_DNS, str(query.uid) + str(time.time())))
-        interaction_instance = initialize_system(cid)
+        interaction_instance = await session_manager.get_session(cid)
         start = time.time()
         interaction_instance.set_query(query.query, query.bot_key, db)
         print(f"Starting the questioning: {query.query}")
@@ -63,6 +64,7 @@ async def agent(query: Query, db: Session = Depends(get_db)):
                 print("Answer Generated")
                 print("Reasoning: ",interaction_instance.last_reasoning)
                 print("Answer: ",interaction_instance.last_answer)
+                await session_manager.cleanup_sessions()
                 break
             print("Generating Answer....")
     return StreamingResponse(stream())
